@@ -1,4 +1,4 @@
-(defproject clj-guava "0.1.0-SNAPSHOT"
+(defproject clj.guava "0.1.0-SNAPSHOT"
   :description "A clojure wrapper for google guava in clojure way."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
