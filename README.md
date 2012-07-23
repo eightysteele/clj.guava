@@ -1,6 +1,6 @@
 # clj.guava
 
-A clojure wrapper for google guava in clojure way.It's still under heavy development.
+A clojure wrapper for [google guava libraries](https://code.google.com/p/guava-libraries/) in clojure way.It's still under heavy development.
 
 ## Progress
 
