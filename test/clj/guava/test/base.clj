@@ -28,4 +28,7 @@
     (let [foo (Foo. 3 4)]
       (is (= "Foo{x=3, y=4}" (with-str-helper foo
                                (addv :x (.x foo))
-                               (addv :y (.y foo))))))))
+                               (addv :y (.y foo))))))
+    (is (= "Foo{x=4, y=5}" (with-str-helper (Foo. 4 5) :as foo
+                               (addv :x (.x foo))
+                               (addv :y (.y foo)))))))

@@ -10,16 +10,16 @@
 
 (def ^{:tag Objects$ToStringHelper :dynamic true} *str-helper* nil)
 
-(defn omit-nil
-  "Omit nil values in addv"
+(defn omit-nils
+  "Omit nil values in addv,it must be in with-str-helper"
   {:added "0.1"}
   []
   (if *str-helper*
     (.omitNullValues *str-helper*)
-    (throw (NullPointerException. "omit-nil not in with-str-helper body"))))
+    (throw (NullPointerException. "omit-nils not in with-str-helper body"))))
 
 (defn addv
-  "Adds a name/value pair to the formatted output in name=value format.Also see with-str-helper"
+  "Adds a name/value pair to the formatted output in name=value format,it must be in with-str-helper"
   { :added "0.1" }
   ([x]
      (if *str-helper*
@@ -34,9 +34,15 @@
   "Returns a string in a format"
   {:tag String :added "0.1"}
   [ obj & body ]
-  `(binding [*str-helper* (Objects/toStringHelper ~obj)]
-     ~@body
-     (.toString *str-helper*)))
+  (let [sym (second body)]
+      (if (and (= (first body) :as) (symbol? sym))
+    `(let [~sym ~obj]
+       (binding [*str-helper* (Objects/toStringHelper ~obj)]
+         ~@body
+         (.toString *str-helper*)))
+    `(binding [*str-helper* (Objects/toStringHelper ~obj)]
+       ~@body
+       (.toString *str-helper*)))))
 
 (defn check-options
   "Throws an exception if the given option map contains keys not listed
