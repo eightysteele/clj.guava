@@ -37,7 +37,7 @@
   (let [sym (second body)]
       (if (and (= (first body) :as) (symbol? sym))
     `(let [~sym ~obj]
-       (binding [*str-helper* (Objects/toStringHelper ~obj)]
+       (binding [*str-helper* (Objects/toStringHelper ~sym)]
          ~@body
          (.toString *str-helper*)))
     `(binding [*str-helper* (Objects/toStringHelper ~obj)]
