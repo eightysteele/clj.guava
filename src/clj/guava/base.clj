@@ -1,5 +1,7 @@
 (ns clj.guava.base
-  (:import [com.google.common.base Objects Objects$ToStringHelper]))
+  (:import [com.google.common.base Objects Objects$ToStringHelper Throwables]
+           [com.google.common.base Function]
+           [com.google.common.collect Ordering]))
 
 (defn  hash-code
   "Generates a hash code for multiple values."
@@ -35,14 +37,14 @@
   {:tag String :added "0.1"}
   [ obj & body ]
   (let [sym (second body)]
-      (if (and (= (first body) :as) (symbol? sym))
-    `(let [~sym ~obj]
-       (binding [*str-helper* (Objects/toStringHelper ~sym)]
+    (if (and (= (first body) :as) (symbol? sym))
+      `(let [~sym ~obj]
+         (binding [*str-helper* (Objects/toStringHelper ~sym)]
+           ~@body
+           (.toString *str-helper*)))
+      `(binding [*str-helper* (Objects/toStringHelper ~obj)]
          ~@body
-         (.toString *str-helper*)))
-    `(binding [*str-helper* (Objects/toStringHelper ~obj)]
-       ~@body
-       (.toString *str-helper*)))))
+         (.toString *str-helper*)))))
 
 (defn check-options
   "Throws an exception if the given option map contains keys not listed
@@ -76,6 +78,22 @@
           (when more
             (list* `assert-args more)))))
 
+;;Throwables
+(defn st-str
+  "Returns a string containing the result of toString(), followed by the full, recursive stack trace of throwable."
+  {:tag String :added "0.1"}
+  [^Throwable t]
+  (Throwables/getStackTraceAsString t))
 
+(defn root-cause
+  " Returns the innermost cause of throwable."
+  {:tag Throwable :added "0.1"}
+  [^Throwable t]
+  (Throwables/getRootCause t))
 
+(defn cause-seq
+  "Returns a sequence contains a throwable cause chain"
+  {:tag clojure.lang.ISeq :added "0.1"}
+  [^Throwable t]
+  (seq (Throwables/getCausalChain t)))
 
