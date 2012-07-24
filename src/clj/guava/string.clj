@@ -8,9 +8,11 @@
     (str s)
     (throw (NullPointerException. msg))))
 
-(defn- ^Character ->char [s]
+(defn ->char [s]
+  "Cast a character or CharSequence to character,otherwise throw exception.If it is a CharSequence,use CharSequence.charAt(0)."
+  {:tag Character :added "0.1"}
   (condp instance? s
-    String (.charAt ^String s 0)
+    CharSequence (.charAt ^CharSequence s 0)
     Character s
     (throw (ClassCastException. (format "try to cast % to %" (type s) Character)))))
 
@@ -258,11 +260,11 @@
 
 (defmatcher isNot cm-is-not "Returns a char matcher that matches any character except the one specified." "0.1")
 
-(defn ma-range
+(defn cm-range
   " Returns a char matcher that matches any character in a given range (both endpoints are inclusive)."
   {:tag CharMatcher :added "0.1"}
   [start end]
-  (CharMatcher/inRange start end))
+  (CharMatcher/inRange (->char start) (->char end)))
 
 (defn cm-and
   "Returns a matcher that matches any character matched by both this matcher and other."
@@ -286,9 +288,9 @@
 
 (definline cm-collapse
   "Returns a string copy of the input character sequence, with each group of consecutive characters that match this matcher replaced by a single replacement character."
-  [^CharMatcher cm ^CharSequence s ^Character ch]
   {:tag String :added "0.1"}
-  `(.collapseFrom ~cm ~s ~ch))
+  [^CharMatcher cm ^CharSequence s ^Character ch]
+  `(.collapseFrom ~cm ~s (->char ~ch)))
 
 (definline cm-count
   " Returns the number of matching characters found in a character sequence."
@@ -360,14 +362,4 @@
   {:added "0.1" :tag String}
   [^CharMatcher cm ^CharSequence s]
   (.trimTrailingFrom cm s))
-
-
-
-
-
-
-
-
-
-
 
