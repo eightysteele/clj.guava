@@ -3,6 +3,17 @@
   clj.guava.string
   (:import [com.google.common.base Joiner Splitter CharMatcher Charsets Strings]))
 
+(defn- ^String ->str [s ^String msg]
+  (if s
+    (str s)
+    (throw (NullPointerException. msg))))
+
+(defn- ^Character ->char [s]
+  (condp instance? s
+    String (.charAt ^String s 0)
+    Character s
+    (throw (ClassCastException. (format "try to cast % to %" (type s) Character)))))
+
 (definline empty->nil
   "Returns the given string if it is nonempty; nil otherwise."
   { :tag String :added "0.1" :static true}
@@ -34,10 +45,7 @@
 "
   {:tag String :added "0.1"}
   [^String string min pad]
-  (if (instance? CharSequence pad)
-    (let [ch (.charAt ^CharSequence pad 0)]
-      (Strings/padStart string min ch))
-    (Strings/padStart string min pad)))
+  (Strings/padStart string min (->char pad)))
 
 (defn padr
   "Returns a string, of length at least minLength, consisting of string appended with as many copies of padChar as are necessary to reach that length.For example:
@@ -46,11 +54,7 @@
 "
   {:tag String :added "0.1"}
   [^String string min pad]
-  (if (instance? CharSequence pad)
-    (let [ch (.charAt ^CharSequence pad 0)]
-      (Strings/padEnd string min ch))
-    (Strings/padEnd string min pad)))
-
+  (Strings/padEnd string min (->char pad)))
 
 (definline repeats
   "Returns a string consisting of a specific number of concatenated copies of an input string.For example:
@@ -70,7 +74,7 @@
 
 (defn ^{:static true :private true :tag Joiner} create-joiner [sep opt-map]
   (let [{:keys [skip-nils when-nil kv]} opt-map
-        ^Joiner jn (Joiner/on (str sep))
+        ^Joiner jn (Joiner/on (->str sep "nil seperator"))
         ^Joiner jn (if skip-nils
                      (.skipNulls jn)
                      jn)
@@ -142,10 +146,10 @@
         ^Splitter sp (condp instance? sep
                        String (Splitter/on ^String sep)
                        java.util.regex.Pattern (Splitter/on ^java.util.regex.Pattern sep)
-                       Character (Splitter/on (str sep))
+                       Character (Splitter/on (->str sep "nil seperator"))
                        CharMatcher (Splitter/on ^CharMatcher sep)
                        Long (Splitter/fixedLength ^long sep)
-                       (Splitter/on (str sep)))
+                       (Splitter/on (->str sep "nil seperator")))
         ^Splitter sp (if omit-emptys
                        (.omitEmptyStrings sp)
                        sp)
@@ -214,7 +218,7 @@
        (lazy-seq (.getBytes string))))
   ([^String string charset]
      (when string
-       (lazy-seq (.getBytes string (str charset))))))
+       (lazy-seq (.getBytes string (->str charset "nil charset"))))))
 
 
 (defn- guava-char-macher-name [^String name]
@@ -313,7 +317,7 @@
       :none  returns true if a character sequence contains no matching characters."
   {:tag boolean :added "0.1"}
   ([^CharMatcher cm ch]
-     (cm-matches cm (str ch) :all))
+     (cm-matches cm (->str ch "nil char sequence to match.") :all))
   ([^CharMatcher cm ^CharSequence s type]
      (condp = type
        :all (.matchesAllOf cm s)
@@ -325,7 +329,7 @@
   "Returns a string copy of the input character sequence, with each character that matches this matcher replaced by a given replacement character."
   {:added "0.1" :tag String}
   [^CharMatcher cm ^CharSequence s replacement]
-  (.replaceFrom cm s (str replacement)))
+  (.replaceFrom cm s (->str replacement "nil replacement")))
 
 (defn cm-remove
   "Returns a string containing all non-matching characters of a character sequence, in order."
