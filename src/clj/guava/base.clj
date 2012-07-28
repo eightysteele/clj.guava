@@ -3,54 +3,11 @@
            [com.google.common.base Function]
            [com.google.common.collect Ordering]))
 
-(defn  hash-code
-  "Generates a hash code for multiple values."
-  {:tag int :static true :added "0.1"}
-  [ x & rest]
-  (Objects/hashCode (into-array Object (cons x rest))))
-
-
-(def ^{:tag Objects$ToStringHelper :dynamic true} *str-helper* nil)
-
-(defn omit-nils
-  "Omit nil values in addv,it must be in with-str-helper"
-  {:added "0.1"}
-  []
-  (if *str-helper*
-    (.omitNullValues *str-helper*)
-    (throw (NullPointerException. "omit-nils not in with-str-helper body"))))
-
-(defn addv
-  "Adds a name/value pair to the formatted output in name=value format,it must be in with-str-helper"
-  { :added "0.1" }
-  ([x]
-     (if *str-helper*
-       (.addValue *str-helper* x)
-       (throw (NullPointerException. "addv is not in with-str-helper body"))))
-  ([k x]
-     (if *str-helper*
-       (.add *str-helper* (name k) x)
-       (throw (NullPointerException. "addv is not in with-str-helper body")))))
-
-(defmacro with-str-helper
-  "Returns a string in a format"
-  {:tag String :added "0.1"}
-  [ obj & body ]
-  (let [sym (second body)]
-    (if (and (= (first body) :as) (symbol? sym))
-      `(let [~sym ~obj]
-         (binding [*str-helper* (Objects/toStringHelper ~sym)]
-           ~@body
-           (.toString *str-helper*)))
-      `(binding [*str-helper* (Objects/toStringHelper ~obj)]
-         ~@body
-         (.toString *str-helper*)))))
-
 ;;Preconditions
-
 (defn check-valid-options
   "Throws an exception if the given option map contains keys not listed
-  as valid, else returns nil.
+  as valid, else returns nil.For example:
+       (check-valid-options {:server \"localhost\" :port 8888} :server :port)
    This function is a private function in clojure.core.
  "
   [options & valid-keys]
@@ -63,14 +20,14 @@
              (map #(str ", " %) (rest valid-keys)))))))
 
 (defn check-arg
-  " Ensures the truth of an expression involving one or more parameters to the calling method."
+  " Ensures the truth of an expression involving one or more parameters to the calling method,otherwise throw a IllegalArgumentException.."
   {:added "0.1"}
   ([exp]
-     (Preconditions/checkArgument exp))
+     (Preconditions/checkArgument (boolean exp)))
   ([exp msg]
-     (Preconditions/checkArgument exp msg))
+     (Preconditions/checkArgument (boolean exp) msg))
   ([exp fmt & objs]
-     (Preconditions/checkArgument exp fmt (into-array Object objs))))
+     (Preconditions/checkArgument (boolean exp) fmt (into-array Object objs))))
 
 (defmacro check-args
   "Assert arguments are valid, a pair has  an argument test and a failure message ,for example:
@@ -85,10 +42,10 @@
   [& pairs]
   `(do (when-not ~(first pairs)
          (throw (IllegalArgumentException.
-                 (str (first ~'&form) " requires " ~(second pairs) " in " ~'*ns* ":" (:line (meta ~'&form))))))
+                 (str "Requires " ~(second pairs) " in " ~'*ns*))))
        ~(let [more (nnext pairs)]
           (when more
-            (list* `assert-args more)))))
+            (list* `check-args more)))))
 
 (defn check-not-nil
   "Ensures that an object reference passed as a parameter to the calling method is not null,else throw NPE."
@@ -104,11 +61,11 @@
   " Ensures the truth of an expression involving the state of the calling instance, but not involving any parameters to the calling method,otherwise throw IllegalStateException."
   {:added "0.1"}
   ([obj]
-     (Preconditions/checkState obj))
+     (Preconditions/checkState (boolean obj)))
   ([obj msg]
-     (Preconditions/checkState obj msg))
+     (Preconditions/checkState (boolean obj) msg))
   ([obj fmt & args]
-     (Preconditions/checkState obj fmt (into-array Object args))))
+     (Preconditions/checkState (boolean obj) fmt (into-array Object args))))
 
 (defn check-pos-index
   "Ensures that index specifies a valid position in an array, list string or other sequence of size size. A position index may range from zero to size, inclusive.For example:
@@ -116,6 +73,7 @@
    (check-pos index index size \"out of index\")
    (check-pos-index start index size)
  "
+  {:added "0.1"}
   ([idx size]
      (Preconditions/checkPositionIndex idx size)) 
   ([x y z]
@@ -130,6 +88,48 @@
      (Preconditions/checkElementIndex idx size))
   ([idx size desc]
      (Preconditions/checkElementIndex idx size desc)))
+
+;;Objects
+(defn  hash-code
+  "Generates a hash code for multiple values."
+  {:tag int :static true :added "0.1"}
+  [ x & rest]
+  (Objects/hashCode (into-array Object (cons x rest))))
+
+
+(def ^{:tag Objects$ToStringHelper :dynamic true} *str-helper* nil)
+
+(defn omit-nils
+  "Omit nil values in addv,it must be in with-str-helper"
+  {:added "0.1"}
+  []
+  (check-not-nil *str-helper* "It is not in with-str-helper.")
+  (.omitNullValues *str-helper*))
+
+(defn addv
+  "Adds a name/value pair to the formatted output in name=value format,it must be in with-str-helper"
+  { :added "0.1" }
+  ([x]
+     (check-not-nil *str-helper* "It is not in with-str-helper.")
+     (.addValue *str-helper* x))
+  ([k x]
+     (check-not-nil *str-helper* "It is not in with-str-helper.")
+     (.add *str-helper* (name k) x)))
+
+(defmacro with-str-helper
+  "Returns a string in a format"
+  {:tag String :added "0.1"}
+  [ obj & body ]
+  (let [sym (second body)]
+    (if (and (= (first body) :as) (symbol? sym))
+      `(let [~sym ~obj]
+         (binding [*str-helper* (Objects/toStringHelper ~sym)]
+           ~@body
+           (.toString *str-helper*)))
+      `(binding [*str-helper* (Objects/toStringHelper ~obj)]
+         ~@body
+         (.toString *str-helper*)))))
+
 
 ;;Throwables
 (defn st-str
