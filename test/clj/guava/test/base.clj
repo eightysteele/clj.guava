@@ -32,3 +32,4 @@
     (is (= "Foo{x=4, y=5}" (with-str-helper (Foo. 4 5) :as foo
                                (addv :x (.x foo))
                                (addv :y (.y foo)))))))
+
