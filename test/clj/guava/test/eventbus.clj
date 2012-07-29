@@ -57,44 +57,52 @@
     (is (= [fn1] (vec (@handlers "event1"))))
     ))
 
-(defn mk-string-catcher [strings]
-  (fn [str]
-    (swap! strings conj str)))
+(defn mk-event-catcher [events]
+  (fn [event]
+    (swap! events conj event)))
 
 (deftest test-post!
   (let [bus (mk-eventbus)
-        strings (atom [])
-        string-catcher (mk-string-catcher strings)]
-    (register! bus "event" string-catcher)
+        events (atom [])
+        event-catcher (mk-event-catcher events)]
+    (register! bus "event" event-catcher)
     (post! bus "event" "msg1")
-    (is (= ["msg1"] @strings))
+    (is (= ["msg1"] @events))
     (post! bus "event" "msg2")
-    (is (= ["msg1" "msg2"] @strings))))
+    (is (= ["msg1" "msg2"] @events))))
 
 (deftest test-mutiple-handlers
   (let [bus (mk-eventbus)
-        strings1 (atom [])
-        string-catcher1 (mk-string-catcher strings1)
-        strings2 (atom [])
-        string-catcher2 (mk-string-catcher strings2)]
-    (register! bus "event" string-catcher1)
-    (register! bus "event" string-catcher2)
+        events1 (atom [])
+        event-catcher1 (mk-event-catcher events1)
+        events2 (atom [])
+        event-catcher2 (mk-event-catcher events2)]
+    (register! bus "event" event-catcher1)
+    (register! bus "event" event-catcher2)
     (post! bus "event" "msg1")
     (post! bus "event" "msg2")
-    (is (= ["msg1" "msg2"] @strings1))
-    (is (= ["msg1" "msg2"] @strings2))))
+    (is (= ["msg1" "msg2"] @events1))
+    (is (= ["msg1" "msg2"] @events2))))
+
+(deftest test-dead-event
+  (let [bus (mk-eventbus)
+        events (atom [])
+        event-catcher (mk-event-catcher events)]
+    (register! bus :dead-event event-catcher)
+    (post! bus "event" "msg1")
+    (is (= [{:event-name "event" :event "msg1"}] @events))))
 
 (deftest test-multiple-events
   (let [bus (mk-eventbus)
-        strings (atom [])
-        string-catcher (mk-string-catcher strings)]
-    (register! bus "event" string-catcher)
-    (register! bus "event1" string-catcher)
+        events (atom [])
+        event-catcher (mk-event-catcher events)]
+    (register! bus "event" event-catcher)
+    (register! bus "event1" event-catcher)
     (post! bus "event" "msg1")
     (post! bus "event1" "msg2")
     (post! bus "event" "msg3")
     (post! bus "event1" "msg4")
-    (is (= ["msg1" "msg2" "msg3" "msg4"] @strings))))
+    (is (= ["msg1" "msg2" "msg3" "msg4"] @events))))
 
 (defn ill-handler [str]
   (throw (RuntimeException. "from ill-handler")))

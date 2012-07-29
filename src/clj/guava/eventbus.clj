@@ -13,6 +13,8 @@
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:use [clojure.tools.logging :only [error]]))
 
+(declare post!)
+
 (defn- dispatch [eventbus]
   "Dispatches the event to handlers."
   (when-not @(:dispatching? eventbus)
@@ -25,14 +27,18 @@
                 event-name (:event-name head-event)
                 event-obj (:event head-event)
                 this-handlers (@handlers event-name)]
-            (when this-handlers
+            (if (and this-handlers (not (empty? this-handlers)))
               (doseq [handler this-handlers]
-                ;; catch all the exceptions, so make sure one error in
+                ;; catch all the exceptions, to make sure one error in
                 ;; a handler will not affect the whole event processing.
                 (try
                   (handler event-obj)
                   (catch Throwable e
-                    (error e))))))))
+                    (error e))))
+              ;; there is no event handler for this event, wrap them as :dead-event
+              ;; user code can register a handler for :dead-event to see if there is
+              ;; there is any event without event-handler
+              (post! eventbus :dead-event {:event-name event-name :event event-obj})))))
       (finally
        (reset! (:dispatching? eventbus) false)))))
 
@@ -54,7 +60,6 @@
   [eventbus event-name handler]
   (when-not (fn? handler)
     (throw (IllegalArgumentException. "event handler should be a function accepts a single param.")))
-  ;; TODO check the handler is a handler
   (let [handlers (:handlers eventbus)
         this-handlers (get-in @handlers [event-name])]
     (when-not this-handlers
