@@ -52,6 +52,8 @@
   "Register the event-handler to handle the specified event"
   {:added "0.1"}
   [eventbus event-name handler]
+  (when-not (fn? handler)
+    (throw (IllegalArgumentException. "event handler should be a function accepts a single param.")))
   ;; TODO check the handler is a handler
   (let [handlers (:handlers eventbus)
         this-handlers (get-in @handlers [event-name])]

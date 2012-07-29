@@ -25,6 +25,15 @@
     (register! bus "event1" fn2)
     (is (= [fn1 fn2] (vec (@handlers "event1"))))))
 
+(deftest test-register!-not-fn
+  (let [bus (mk-eventbus)
+        has-error? (atom false)]
+    (try
+      (register! bus "event" "not-a-handler")
+      (catch IllegalArgumentException e
+        (reset! has-error? true)))
+    (is (= true @has-error?))))
+
 (deftest test-unregister!
   (let [bus (mk-eventbus)
         handlers (:handlers bus)
