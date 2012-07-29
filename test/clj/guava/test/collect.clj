@@ -121,7 +121,7 @@
 
 (deftest test-with-ordering
   (testing "with-ordering"
-    (is (thrown? NullPointerException (cmp 1 2))) 
+    (is (thrown-with-msg? NullPointerException #"is not bound" (cmp 1 2))) 
     (with-ordering (order-by)
       (is (ordered? '(1 2 3 4)))
       (is (< (cmp 1 2) 0))

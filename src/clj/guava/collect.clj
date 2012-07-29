@@ -169,7 +169,7 @@
   {:tag boolean :added "0.1"}
   ([col]
      (check-not-nil *ordering* "*ordering* is not bound")
-     (ordered? *ordering* col))
+     (strictly-ordered? *ordering* col))
   ([^Ordering ord col]
      (.isStrictlyOrdered ord (seq col))))
 
