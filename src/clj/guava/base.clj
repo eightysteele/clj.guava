@@ -3,6 +3,61 @@
            [com.google.common.base Function]
            [com.google.common.collect Ordering]))
 
+;;basic utils
+(defn exists?
+  "Check if a object is not nil,equals to (not (nil? obj))."
+  {:tag boolean :added "0.1"}
+  [obj]
+  (not (nil? obj)))
+
+(defn pearl
+  "Takes a fn f and returns a fn that takes the same arguments but in reverse order as f."
+  {:added "0.1"
+   :static true}
+  [f]
+  (fn
+    ([] (f))
+    ([x] (f x))
+    ([x y] (f y x))
+    ([x y & zs]
+       (apply f (reverse (cons x (cons y zs)))))))
+
+(defn var-ns
+  "Returns the var's namespace if it was bound,otherwise returns nil."
+  {:tag clojure.lang.Namespace :added "0.1"}
+  [^clojure.lang.Var v]
+  (.ns v))
+
+(defn btrue?
+  "Returns true if x is the true value, false otherwise.For example:
+     (btrue? 1)  => true
+     (btrue? 0)  => true
+     (btrue? '())  => true
+     (btrue? true) => true
+     (btrue? false) => false
+     (btrue? nil)  => false
+  "
+  {:added "0.1" :tag boolean}
+  [v]
+  (if v
+    true
+    false))
+
+(defn bfalse?
+  "Returns true if x is the false value, false otherwise.For example:
+     (bfalse? 1)  => false
+     (bfalse? 0)  => false
+     (bfalse? '())  => false
+     (bfalse? true) => false
+     (bfalse? false) => true
+     (bfalse? nil)  => true
+  "
+  {:added "0.1" :tag boolean}
+  [v]
+  (if v
+    false
+    true))
+
 ;;Preconditions
 (defn check-valid-options
   "Throws an exception if the given option map contains keys not listed
