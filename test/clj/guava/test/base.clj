@@ -105,17 +105,17 @@
 
 ;;basic utitilis
 
-(deftest test-exists?
-  (is (exists? 1))
-  (is (exists? 0))
-  (is (exists? true))
-  (is (exists? false))
-  (is (false? (exists? nil))))
+(deftest test-not-nil?
+  (is (not-nil? 1))
+  (is (not-nil? 0))
+  (is (not-nil? true))
+  (is (not-nil? false))
+  (is (false? (not-nil? nil))))
 
 (deftest test-pearl
   (let [f (fn [x y] x)
         new-f (pearl f)]
-    (is (exists? new-f))
+    (is (not-nil? new-f))
     (is (= 1 (f 1 2)))
     (is (= 2 (new-f 1 2))))
   (let [f (fn [x y z] (+ x y))

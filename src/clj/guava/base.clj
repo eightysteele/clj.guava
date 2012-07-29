@@ -4,7 +4,7 @@
            [com.google.common.collect Ordering]))
 
 ;;basic utils
-(defn exists?
+(defn not-nil?
   "Check if a object is not nil,equals to (not (nil? obj))."
   {:tag boolean :added "0.1"}
   [obj]
