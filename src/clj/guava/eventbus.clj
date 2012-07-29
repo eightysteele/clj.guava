@@ -1,10 +1,10 @@
 ;; The usage of the eventbus is:
 ;; 1. create a eventbus
-;;   (mk-eventbus)
+;;   (def bus (mk-eventbus))
 ;; 2. register your event handler function to the eventbus
-;;   (register! event-name event-handler-fn) -- there is a default eventbus, so we dont need to add the eventbus here.
+;;   (register! bus event-name handler)
 ;; 3. then the event generator can post the event:
-;;   (post! event-name event)  -- same as above, no need to pass eventbus, use default eventbus.
+;;   (post! bus event-name event)
 
 
 (ns ^{:doc "Clojure version of guava eventbus, it is totally reimplemented"
