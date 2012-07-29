@@ -9,96 +9,65 @@
 
 (ns ^{:doc "Clojure version of guava eventbus, it is totally reimplemented"
       :author "xumingmingv"}
-  clj.guava.eventbus)
+  clj.guava.eventbus
+  (:import [java.util.concurrent ConcurrentLinkedQueue]))
 
-;; event-buses is a map: the structure of it is:
-;; {:default                                 -- eventbus name
-;;    {                                      -- actual content of a eventbus
-;;      :handlers
-;;        {
-;;          :window-closed                   -- event name
-;;            [
-;;                 window-closed-handler1    -- event handler
-;;                 window-closed-handler2
-;;            ]
-;;        }
-;;      :events
-;;        {
-;;            :window-closed
-;;              [
-;;                  {:msg "window is closed"}  -- event
-;;                  {:msg "window is closed again"}
-;;              ]
-;;        }
-;;    }
-;; }
+(defn- dispatch [eventbus]
+  "Dispatches the event to handlers."
+  (when-not @(:dispatching? eventbus)
+    (reset! (:dispatching? eventbus) true)
+    (try
+      (let [^ConcurrentLinkedQueue events (:events eventbus)]
+        (while (not (empty? events))
+          (let [head-event (.poll events)
+                handlers (:handlers eventbus)
+                event-name (:event-name head-event)
+                event-obj (:event head-event)
+                this-handlers (@handlers event-name)]
+            (when this-handlers
+              (doseq [handler this-handlers]
+                (handler event-obj))))))
+      (finally
+       (reset! (:dispatching? eventbus) false)))))
 
-(def event-buses (atom {}))
-
-(defn- add-handler! [eventbus-name event-name event-handler-fn]
-  (when-not (get-in @event-buses [eventbus-name :handlers event-name])
-    (swap! event-buses assoc-in [eventbus-name :handlers event-name] []))
-  (let [handler-cnt (count (get-in @event-buses [eventbus-name :handlers event-name]))]
-    (swap! event-buses assoc-in [eventbus-name :handlers event-name handler-cnt] event-handler-fn)))
-
-(defn- remove-handler! [eventbus-name event-name event-handler-fn]
-  ;; check whether the eventbus exists
-  (when-not (get-in @event-buses [eventbus-name :handlers event-name])
-    (throw (RuntimeException. "There is no such event named: " event-name)))
-  (let [handler-cnt (count (get-in @event-buses [eventbus-name :handlers event-name]))]
-    (swap! event-buses update-in [eventbus-name :handlers event-name handler-cnt] event-handler-fn)))
-
-(defn add-event! [eventbus-name event-name event]
-  (when-not (get-in @event-buses [eventbus-name :events event-name])
-    (swap! event-buses assoc-in [eventbus-name :events event-name] []))
-  (let [handler-cnt (count (get-in @event-buses [eventbus-name :events event-name]))]
-    (swap! event-buses assoc-in [eventbus-name :events event-name handler-cnt] event)))
-
-(defn dispatch-event! [eventbus-name]
-  (let [events (get-in @event-buses [eventbus-name :events])
-        handlers (get-in @event-buses [eventbus-name :handlers])]
-    (doseq [[event-name this-events] events
-            :let [this-event-handlers (handlers event-name)]]
-      (doseq [handler this-event-handlers]
-        (doseq [event this-events]
-          (handler event))))))
-
-
-(defn- mk-eventbus [eventbus-name]
-  (swap! event-buses assoc eventbus-name {:handlers {} :events {}}))
-
-(defn- eventbus-exists? [eventbus-name]
-  "Checks whether the eventbus already exists."
-  (not (nil? (@event-buses eventbus-name))))
-
-;; create the default eventbus
-(mk-eventbus :default)
+(defn mk-eventbus
+  "Creates a new eventbus with the specified name, if name not provided :default will be used."
+  {:added "0.1"}
+  ([]
+     (mk-eventbus :default))
+  ([name]
+     (let [eventbus {:name name
+                     :handlers (atom {})
+                     :events (ConcurrentLinkedQueue.)
+                     :dispatching? (atom false)}]
+       eventbus)))
 
 (defn register!
   "Register the event-handler to handle the specified event"
-  ([event-name event-handler-fn]
-     (register! :default event-name event-handler-fn))
-  ([eventbus-name event-name event-handler-fn]
-     ;; create the eventbus if it not exists yet
-     (when-not (eventbus-exists? eventbus-name)
-       (mk-eventbus event-name))
-     (add-handler! eventbus-name event-name event-handler-fn)))
+  {:added "0.1"}
+  [eventbus event-name handler]
+  ;; TODO check the handler is a handler
+  (let [handlers (:handlers eventbus)
+        this-handlers (get-in @handlers [event-name])]
+    (when-not this-handlers
+      (swap! handlers assoc-in [event-name] []))
+    (swap! handlers update-in [event-name] conj handler)))
 
 (defn unregister!
-  ""
-  ([event-name event-handler-fn]
-     (unregister! :default event-name event-handler-fn))
-  ([eventbus-name event-name event-handler-fn]
-     (when-not (eventbus-exists? eventbus-name)
-       (throw (RuntimeException. "There is no such eventbus named: " eventbus-name)))
-     (remove-handler! eventbus-name event-name event-handler-fn)))
+  "Unregiser the event-handler."
+  {:added "0.1"}
+  [eventbus event-name handler]
+  (let [handlers (:handlers eventbus)
+        this-handlers (@handlers event-name)]
+    (if this-handlers
+      (swap! handlers update-in [event-name] #(vec (remove #{handler} %)))
+      (throw (RuntimeException. (str "No such event registered: " event-name))))))
 
 (defn post!
   "Post a event to the specified eventbus"
-  ([event-name event]
-     (post! :default event-name event))
-  ([eventbus-name event-name event]
-     (when-not (eventbus-exists? eventbus-name)
-       (throw (RuntimeException. "There is no eventbus named: " eventbus-name)))
-     (add-event! eventbus-name event-name event)
-     (dispatch-event! :default)))
+  {:added "0.1"}
+  [eventbus event-name event]
+  (let [^ConcurrentLinkedQueue events (:events eventbus)]
+    (.add events {:event-name event-name :event event})
+    (dispatch eventbus)))
+
