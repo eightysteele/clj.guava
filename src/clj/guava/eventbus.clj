@@ -10,7 +10,8 @@
 (ns ^{:doc "Clojure version of guava eventbus, it is totally reimplemented"
       :author "xumingmingv"}
   clj.guava.eventbus
-  (:import [java.util.concurrent ConcurrentLinkedQueue]))
+  (:import [java.util.concurrent ConcurrentLinkedQueue])
+  (:use [clojure.tools.logging :only [error]]))
 
 (defn- dispatch [eventbus]
   "Dispatches the event to handlers."
@@ -26,7 +27,12 @@
                 this-handlers (@handlers event-name)]
             (when this-handlers
               (doseq [handler this-handlers]
-                (handler event-obj))))))
+                ;; catch all the exceptions, so make sure one error in
+                ;; a handler will not affect the whole event processing.
+                (try
+                  (handler event-obj)
+                  (catch Throwable e
+                    (error e))))))))
       (finally
        (reset! (:dispatching? eventbus) false)))))
 

@@ -2,8 +2,6 @@
   (:use [clojure.test])
   (:use [clj.guava.eventbus]))
 
-
-
 (deftest test-mk-eventbus
   (let [bus (mk-eventbus)]
     (is (= false (nil? bus)))
@@ -88,3 +86,15 @@
     (post! bus "event" "msg3")
     (post! bus "event1" "msg4")
     (is (= ["msg1" "msg2" "msg3" "msg4"] @strings))))
+
+(defn ill-handler [str]
+  (throw (RuntimeException. "from ill-handler")))
+
+(deftest test-exception
+  (let [bus (mk-eventbus)
+        has-error? (atom false)]
+    (try
+      (register! bus "event" ill-handler)
+      (catch Throwable e
+        (reset! has-error? true)))
+    (is (= false @has-error?))))

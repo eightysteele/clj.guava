@@ -5,4 +5,5 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :warn-on-reflection true
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [com.google.guava/guava "12.0.1"]])
+                 [com.google.guava/guava "12.0.1"]
+                 [org.clojure/tools.logging "0.2.3"]])
