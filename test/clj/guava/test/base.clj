@@ -102,3 +102,43 @@
     (is (instance? RuntimeException (second s)))
     (is (instance? IllegalStateException (first (nnext s))))))
 
+
+;;basic utitilis
+
+(deftest test-not-nil?
+  (is (not-nil? 1))
+  (is (not-nil? 0))
+  (is (not-nil? true))
+  (is (not-nil? false))
+  (is (false? (not-nil? nil))))
+
+(deftest test-pearl
+  (let [f (fn [x y] x)
+        new-f (pearl f)]
+    (is (not-nil? new-f))
+    (is (= 1 (f 1 2)))
+    (is (= 2 (new-f 1 2))))
+  (let [f (fn [x y z] (+ x y))
+        new-f (pearl f)]
+    (is (= 3 (f 1 2 3)))
+    (is (= 5 (new-f 1 2 3)))))
+
+(deftest test-var-ns
+  (is (= (symbol "clojure.test") (.name (var-ns #'deftest))))
+  (is (= (symbol "clojure.core") (.name (var-ns #'contains?)))))
+
+(deftest test-btrue?
+  (is (btrue? 0))
+  (is (btrue? 1))
+  (is (btrue? true))
+  (is (false? (btrue? nil)))
+  (is (false? (btrue? false))))
+
+(deftest test-bfalse?
+  (is (bfalse? nil))
+  (is (bfalse? false))
+  (is (false? (bfalse? 0)))
+  (is (false? (bfalse? "")))
+  (is (false? (bfalse? '())))
+  (is (false? (bfalse? true)))
+  (is (false? (bfalse? 1))))
